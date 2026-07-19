@@ -1,0 +1,236 @@
+/* Colored Organization — styling for the Obsidian file explorer */
+
+:root {
+  --folder-c1: #C2593F; /* Warm Terracotta */
+  --folder-c2: #3E6B5C; /* Sage Green */
+  --folder-c3: #3E5C76; /* Slate Blue */
+  --folder-c4: #7A5E91; /* Lavender Amethyst */
+  --folder-c5: #A66E2E; /* Amber Gold */
+  --folder-c6: #2E7D84; /* Deep Teal */
+  --folder-bg-mix: 5%; /* Default mix strength */
+}
+
+body.theme-dark {
+  --folder-c1: #E08A70;
+  --folder-c2: #86BFA8;
+  --folder-c3: #8FB3D1;
+  --folder-c4: #B9A1D9;
+  --folder-c5: #D9A55E;
+  --folder-c6: #7CC5CE;
+  --folder-bg-mix: 8%; /* Default dark mix strength */
+}
+
+/* Base file explorer folder layout */
+.nav-folder {
+  border-left: 3px solid var(--folder-color, var(--folder-c1));
+  background-color: var(--folder-bg, color-mix(in srgb, var(--folder-color, var(--folder-c1)) var(--folder-bg-mix, 5%), var(--background-secondary))) !important;
+  border-radius: 6px;
+  margin: 6px 0 6px 8px;
+  padding: 4px 4px 4px 6px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base title colors */
+.nav-folder > .nav-folder-title {
+  color: var(--folder-color, var(--folder-c1)) !important;
+  font-weight: 600 !important;
+  border-radius: 4px;
+}
+
+.nav-folder > .nav-folder-children .nav-file-title {
+  color: var(--folder-color, var(--folder-c1)) !important;
+  border-radius: 4px;
+}
+
+/* Per-folder color cycle */
+.nav-folder:not(.mod-root):nth-child(6n + 1) { --folder-color: var(--folder-c1); }
+.nav-folder:not(.mod-root):nth-child(6n + 2) { --folder-color: var(--folder-c2); }
+.nav-folder:not(.mod-root):nth-child(6n + 3) { --folder-color: var(--folder-c3); }
+.nav-folder:not(.mod-root):nth-child(6n + 4) { --folder-color: var(--folder-c4); }
+.nav-folder:not(.mod-root):nth-child(6n + 5) { --folder-color: var(--folder-c5); }
+.nav-folder:not(.mod-root):nth-child(6n + 6) { --folder-color: var(--folder-c6); }
+
+/* Subfolders */
+.nav-folder .nav-folder:nth-child(6n + 1) { --folder-color: var(--folder-c3); }
+.nav-folder .nav-folder:nth-child(6n + 2) { --folder-color: var(--folder-c4); }
+.nav-folder .nav-folder:nth-child(6n + 3) { --folder-color: var(--folder-c5); }
+.nav-folder .nav-folder:nth-child(6n + 4) { --folder-color: var(--folder-c6); }
+.nav-folder .nav-folder:nth-child(6n + 5) { --folder-color: var(--folder-c1); }
+.nav-folder .nav-folder:nth-child(6n + 6) { --folder-color: var(--folder-c2); }
+
+/* Third nesting and deeper */
+.nav-folder .nav-folder .nav-folder:nth-child(6n + 1) { --folder-color: var(--folder-c5); }
+.nav-folder .nav-folder .nav-folder:nth-child(6n + 2) { --folder-color: var(--folder-c6); }
+.nav-folder .nav-folder .nav-folder:nth-child(6n + 3) { --folder-color: var(--folder-c1); }
+.nav-folder .nav-folder .nav-folder:nth-child(6n + 4) { --folder-color: var(--folder-c2); }
+.nav-folder .nav-folder .nav-folder:nth-child(6n + 5) { --folder-color: var(--folder-c3); }
+.nav-folder .nav-folder .nav-folder:nth-child(6n + 6) { --folder-color: var(--folder-c4); }
+
+.nav-folder:not(.mod-root) {
+  --folder-bg: color-mix(in srgb, var(--folder-color, var(--folder-c1)) var(--folder-bg-mix, 5%), var(--background-secondary));
+}
+
+/* Hover effects */
+.nav-folder > .nav-folder-title:hover {
+  background-color: color-mix(in srgb, var(--folder-color, var(--folder-c1)) 10%, var(--folder-bg, var(--background-secondary))) !important;
+  filter: brightness(0.95);
+}
+
+.nav-folder > .nav-folder-children .nav-file-title:hover {
+  background-color: color-mix(in srgb, var(--folder-color, var(--folder-c1)) 12%, var(--folder-bg, var(--background-secondary))) !important;
+  filter: brightness(0.95);
+}
+
+/* Active navigation items */
+.nav-file-title.is-active {
+  background-color: color-mix(in srgb, var(--folder-color, var(--text-accent)) 18%, var(--folder-bg, var(--background-secondary))) !important;
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--folder-color, var(--text-accent));
+}
+
+/* Knobe lock icon styling */
+.knobe-lock-icon {
+  margin-right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 0;
+  color: var(--text-accent, currentColor);
+}
+.knobe-lock-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Modal styles and picker grid from folder-palette */
+.folder-palette-section {
+  margin: 14px 0 6px;
+  font-size: 13px;
+}
+.folder-palette-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.folder-palette-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 170px;
+  overflow-y: auto;
+  padding: 6px 2px;
+}
+.folder-palette-swatch {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--swatch) !important;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+.folder-palette-swatch:hover {
+  transform: scale(1.12);
+}
+.folder-palette-swatch:focus-visible,
+.folder-palette-swatch.is-current {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+.folder-palette-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.folder-palette-custom input[type="color"] {
+  width: 42px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.folder-palette-custom input[type="color"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.folder-palette-preview {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 4px;
+}
+.folder-palette-chip {
+  padding: 2px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--background-modifier-border);
+  font-size: 12px;
+  font-weight: 600;
+}
+.folder-palette-patterns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.folder-palette-pattern {
+  min-width: 64px;
+  min-height: 34px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.folder-palette-pattern.is-current {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+.folder-palette-emoji-input {
+  width: 90px;
+  font-size: 18px;
+  text-align: center;
+}
+.folder-palette-emoji-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.folder-palette-emoji-preset {
+  min-width: 34px;
+  min-height: 30px;
+  padding: 2px 6px;
+  font-size: 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+.folder-palette-emoji-preset:hover {
+  transform: scale(1.1);
+}
+.folder-palette-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .folder-palette-swatch:hover,
+  .folder-palette-emoji-preset:hover {
+    transform: none;
+  }
+}
+.folder-palette-icon-path {
+  font-family: var(--font-monospace);
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -86,6 +86,27 @@ function getHighContrastColor(folderColorHex, isDarkTheme, mixPercent) {
   return lum > 0.5 ? "#000000" : "#f5f5f5";
 }
 
+function getMatchTextColor(folderColorHex, isDarkTheme, mixPercent) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(folderColorHex)) return folderColorHex;
+  const bgHex = isDarkTheme ? DARK_BG : LIGHT_BG;
+  const folderRgb = hexToRgb(folderColorHex);
+  const bgRgb = hexToRgb(bgHex);
+  const mixedBgRgb = mixRgb(bgRgb, folderRgb, mixPercent / 100);
+  
+  const desiredTextHex = ensureContrast(folderColorHex, bgHex, AA);
+  const desiredTextRgb = hexToRgb(desiredTextHex);
+  
+  const textLum = luminance(desiredTextRgb);
+  const bgLum = luminance(mixedBgRgb);
+  const c = contrast(textLum, bgLum);
+  
+  if (c >= 3.0) {
+    return desiredTextHex;
+  } else {
+    return bgLum > 0.5 ? "#000000" : "#f5f5f5";
+  }
+}
+
 // Helper to escape path for selector
 function cssEscapePath(p) {
   return p.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -233,7 +254,7 @@ class FolderStyleModal extends Modal {
         this.emojiInput.value = e;
         this.cfg.emoji = e;
         delete this.cfg.icon;
-        this.iconLabel?.setText("(none)");
+        this.iconLabel.setText(path);
       };
     }
 
@@ -286,6 +307,7 @@ class FolderStyleModal extends Modal {
       b.toggleClass("is-current", (this.cfg.pattern ?? "none") === key);
     }
     if (this.cfg.color) {
+      this.previewEl.empty();
       const l = this.previewEl.createSpan({ cls: "folder-palette-chip", text: "day" });
       l.style.cssText = `background:${LIGHT_BG};color:${ensureContrast(this.cfg.color, LIGHT_BG, AA)};`;
       const d = this.previewEl.createSpan({ cls: "folder-palette-chip", text: "night" });
@@ -566,6 +588,59 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
     const opacity = this.data.bgOpacity ?? 5;
     rules.push(`body { --folder-bg-mix: ${opacity}% !important; }`);
 
+    // Define cycling colors sequences
+    const cycleColorsLight = ["#C2593F", "#3E6B5C", "#3E5C76", "#7A5E91", "#A66E2E", "#2E7D84"];
+    const cycleColorsDark  = ["#E08A70", "#86BFA8", "#8FB3D1", "#B9A1D9", "#D9A55E", "#7CC5CE"];
+
+    // Sibling folders cycle step text colors
+    for (let i = 0; i < 6; i++) {
+      const colLight = cycleColorsLight[i];
+      const colDark = cycleColorsDark[i];
+      
+      const textLight = this.data.textColorMode === "high-contrast" ? getHighContrastColor(colLight, false, opacity)
+                      : this.data.textColorMode === "match" ? getMatchTextColor(colLight, false, opacity)
+                      : "var(--text-normal)";
+      const textDark = this.data.textColorMode === "high-contrast" ? getHighContrastColor(colDark, true, opacity)
+                     : this.data.textColorMode === "match" ? getMatchTextColor(colDark, true, opacity)
+                     : "var(--text-normal)";
+                     
+      rules.push(`body.theme-light .nav-folder:not(.mod-root):nth-child(6n + ${i + 1}) { --folder-text-color: ${textLight} !important; }`);
+      rules.push(`body.theme-dark .nav-folder:not(.mod-root):nth-child(6n + ${i + 1}) { --folder-text-color: ${textDark} !important; }`);
+    }
+
+    // Subfolders cycle step text colors
+    for (let i = 0; i < 6; i++) {
+      const colLight = cycleColorsLight[(i + 2) % 6];
+      const colDark = cycleColorsDark[(i + 2) % 6];
+      
+      const textLight = this.data.textColorMode === "high-contrast" ? getHighContrastColor(colLight, false, opacity)
+                      : this.data.textColorMode === "match" ? getMatchTextColor(colLight, false, opacity)
+                      : "var(--text-normal)";
+      const textDark = this.data.textColorMode === "high-contrast" ? getHighContrastColor(colDark, true, opacity)
+                     : this.data.textColorMode === "match" ? getMatchTextColor(colDark, true, opacity)
+                     : "var(--text-normal)";
+                     
+      rules.push(`body.theme-light .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textLight} !important; }`);
+      rules.push(`body.theme-dark .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textDark} !important; }`);
+    }
+
+    // Third nesting depth cycle step text colors
+    for (let i = 0; i < 6; i++) {
+      const colLight = cycleColorsLight[(i + 4) % 6];
+      const colDark = cycleColorsDark[(i + 4) % 6];
+      
+      const textLight = this.data.textColorMode === "high-contrast" ? getHighContrastColor(colLight, false, opacity)
+                      : this.data.textColorMode === "match" ? getMatchTextColor(colLight, false, opacity)
+                      : "var(--text-normal)";
+      const textDark = this.data.textColorMode === "high-contrast" ? getHighContrastColor(colDark, true, opacity)
+                     : this.data.textColorMode === "match" ? getMatchTextColor(colDark, true, opacity)
+                     : "var(--text-normal)";
+                     
+      rules.push(`body.theme-light .nav-folder .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textLight} !important; }`);
+      rules.push(`body.theme-dark .nav-folder .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textDark} !important; }`);
+    }
+
+    // Per-folder rules overrides
     for (const [p, cfg] of Object.entries(this.data.folders)) {
       if (!cfg || typeof cfg !== "object") continue;
       const sel = `.nav-folder:has(> .nav-folder-title[data-path="${cssEscapePath(p)}"])`;
@@ -582,7 +657,7 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
       } else if (this.data.textColorMode === "default") {
         lightText = "var(--text-normal)";
       } else if (lightColor) {
-        lightText = lightColor;
+        lightText = getMatchTextColor(cfg.color, false, opacity);
       }
 
       // Determine text color for dark mode
@@ -594,7 +669,7 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
       } else if (this.data.textColorMode === "default") {
         darkText = "var(--text-normal)";
       } else if (darkColor) {
-        darkText = darkColor;
+        darkText = getMatchTextColor(cfg.color, true, opacity);
       }
 
       if (lightColor) {

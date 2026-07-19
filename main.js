@@ -107,6 +107,14 @@ function getMatchTextColor(folderColorHex, isDarkTheme, mixPercent) {
   }
 }
 
+function getTextShadow(colorHex) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(colorHex)) return "none";
+  const rgb = hexToRgb(colorHex);
+  const lum = luminance(rgb);
+  // White/light text gets black shadow, dark/black text gets white shadow
+  return lum > 0.5 ? "1px 1px 2px rgba(0, 0, 0, 0.85)" : "1px 1px 2px rgba(255, 255, 255, 0.85)";
+}
+
 // Helper to escape path for selector
 function cssEscapePath(p) {
   return p.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -203,7 +211,7 @@ class FolderStyleModal extends Modal {
       else this.cfg.darkColor = this.darkInput.value;
       this.refreshSelection();
     };
-    this.darkInput.oninput = () => { this.cfg.darkColor = this.darkInput.value; this.refreshSelection(); };
+    this.darkInput.oninput = () => { this.cfg.darkColor = this.darkInput.value; };
 
     /* --- Font color --- */
     this.section(contentEl, "Font color", "Default: controlled by global setting.");
@@ -254,7 +262,7 @@ class FolderStyleModal extends Modal {
         this.emojiInput.value = e;
         this.cfg.emoji = e;
         delete this.cfg.icon;
-        this.iconLabel.setText(path);
+        this.iconLabel.setText("(none)");
       };
     }
 
@@ -592,7 +600,7 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
     const cycleColorsLight = ["#C2593F", "#3E6B5C", "#3E5C76", "#7A5E91", "#A66E2E", "#2E7D84"];
     const cycleColorsDark  = ["#E08A70", "#86BFA8", "#8FB3D1", "#B9A1D9", "#D9A55E", "#7CC5CE"];
 
-    // Sibling folders cycle step text colors
+    // Sibling folders cycle step text colors & shadows
     for (let i = 0; i < 6; i++) {
       const colLight = cycleColorsLight[i];
       const colDark = cycleColorsDark[i];
@@ -604,11 +612,14 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
                      : this.data.textColorMode === "match" ? getMatchTextColor(colDark, true, opacity)
                      : "var(--text-normal)";
                      
-      rules.push(`body.theme-light .nav-folder:not(.mod-root):nth-child(6n + ${i + 1}) { --folder-text-color: ${textLight} !important; }`);
-      rules.push(`body.theme-dark .nav-folder:not(.mod-root):nth-child(6n + ${i + 1}) { --folder-text-color: ${textDark} !important; }`);
+      const shadowLight = textLight.startsWith("#") ? getTextShadow(textLight) : "none";
+      const shadowDark = textDark.startsWith("#") ? getTextShadow(textDark) : "none";
+                     
+      rules.push(`body.theme-light .nav-folder:not(.mod-root):nth-child(6n + ${i + 1}) { --folder-text-color: ${textLight} !important; --folder-text-shadow: ${shadowLight} !important; }`);
+      rules.push(`body.theme-dark .nav-folder:not(.mod-root):nth-child(6n + ${i + 1}) { --folder-text-color: ${textDark} !important; --folder-text-shadow: ${shadowDark} !important; }`);
     }
 
-    // Subfolders cycle step text colors
+    // Subfolders cycle step text colors & shadows
     for (let i = 0; i < 6; i++) {
       const colLight = cycleColorsLight[(i + 2) % 6];
       const colDark = cycleColorsDark[(i + 2) % 6];
@@ -620,11 +631,14 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
                      : this.data.textColorMode === "match" ? getMatchTextColor(colDark, true, opacity)
                      : "var(--text-normal)";
                      
-      rules.push(`body.theme-light .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textLight} !important; }`);
-      rules.push(`body.theme-dark .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textDark} !important; }`);
+      const shadowLight = textLight.startsWith("#") ? getTextShadow(textLight) : "none";
+      const shadowDark = textDark.startsWith("#") ? getTextShadow(textDark) : "none";
+                     
+      rules.push(`body.theme-light .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textLight} !important; --folder-text-shadow: ${shadowLight} !important; }`);
+      rules.push(`body.theme-dark .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textDark} !important; --folder-text-shadow: ${shadowDark} !important; }`);
     }
 
-    // Third nesting depth cycle step text colors
+    // Third nesting depth cycle step text colors & shadows
     for (let i = 0; i < 6; i++) {
       const colLight = cycleColorsLight[(i + 4) % 6];
       const colDark = cycleColorsDark[(i + 4) % 6];
@@ -636,8 +650,11 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
                      : this.data.textColorMode === "match" ? getMatchTextColor(colDark, true, opacity)
                      : "var(--text-normal)";
                      
-      rules.push(`body.theme-light .nav-folder .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textLight} !important; }`);
-      rules.push(`body.theme-dark .nav-folder .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textDark} !important; }`);
+      const shadowLight = textLight.startsWith("#") ? getTextShadow(textLight) : "none";
+      const shadowDark = textDark.startsWith("#") ? getTextShadow(textDark) : "none";
+                     
+      rules.push(`body.theme-light .nav-folder .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textLight} !important; --folder-text-shadow: ${shadowLight} !important; }`);
+      rules.push(`body.theme-dark .nav-folder .nav-folder .nav-folder:nth-child(6n + ${i + 1}) { --folder-text-color: ${textDark} !important; --folder-text-shadow: ${shadowDark} !important; }`);
     }
 
     // Per-folder rules overrides
@@ -648,8 +665,9 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
       let lightColor = cfg.color ? ensureContrast(cfg.color, LIGHT_BG, AA) : null;
       let darkColor = cfg.color ? (cfg.darkColor ?? ensureContrast(cfg.color, DARK_BG, AA)) : null;
 
-      // Determine text color for light mode
+      // Determine text color and shadow for light mode
       let lightText = null;
+      let lightShadow = "none";
       if (cfg.textColor) {
         lightText = ensureContrast(cfg.textColor, LIGHT_BG, AA);
       } else if (this.data.textColorMode === "high-contrast") {
@@ -659,9 +677,13 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
       } else if (lightColor) {
         lightText = getMatchTextColor(cfg.color, false, opacity);
       }
+      if (lightText && lightText.startsWith("#")) {
+        lightShadow = getTextShadow(lightText);
+      }
 
-      // Determine text color for dark mode
+      // Determine text color and shadow for dark mode
       let darkText = null;
+      let darkShadow = "none";
       if (cfg.textColor) {
         darkText = cfg.textColorDark ?? ensureContrast(cfg.textColor, DARK_BG, AA);
       } else if (this.data.textColorMode === "high-contrast") {
@@ -670,6 +692,9 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
         darkText = "var(--text-normal)";
       } else if (darkColor) {
         darkText = getMatchTextColor(cfg.color, true, opacity);
+      }
+      if (darkText && darkText.startsWith("#")) {
+        darkShadow = getTextShadow(darkText);
       }
 
       if (lightColor) {
@@ -680,10 +705,10 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
       }
 
       if (lightText) {
-        rules.push(`body.theme-light ${sel} { --folder-text-color: ${lightText} !important; }`);
+        rules.push(`body.theme-light ${sel} { --folder-text-color: ${lightText} !important; --folder-text-shadow: ${lightShadow} !important; }`);
       }
       if (darkText) {
-        rules.push(`body.theme-dark ${sel} { --folder-text-color: ${darkText} !important; }`);
+        rules.push(`body.theme-dark ${sel} { --folder-text-color: ${darkText} !important; --folder-text-shadow: ${darkShadow} !important; }`);
       }
 
       if (cfg.pattern && PATTERNS[cfg.pattern]) {

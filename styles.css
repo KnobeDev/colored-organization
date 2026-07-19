@@ -57,8 +57,23 @@ body.text-contrast-default.theme-dark .nav-folder {
 .nav-folder .nav-file-title .tree-item-inner,
 .nav-folder .nav-file-title .tree-item-inner-text {
   color: var(--folder-text-color, var(--folder-color, var(--folder-c1))) !important;
+  text-shadow: var(--folder-text-shadow, none) !important;
   font-weight: 600 !important;
   border-radius: 4px;
+}
+
+/* Non-markdown asset files styling (outline border & light background badge) */
+.nav-folder .nav-file-title:not([data-path$=".md" i]) {
+  background-color: color-mix(in srgb, var(--folder-text-color, var(--folder-color, var(--folder-c1))) 10%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--folder-text-color, var(--folder-color, var(--folder-c1))) 40%, transparent) !important;
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  margin: 2px 4px !important;
+  transition: background-color 0.2s ease;
+}
+
+.nav-folder .nav-file-title:not([data-path$=".md" i]):hover {
+  background-color: color-mix(in srgb, var(--folder-text-color, var(--folder-color, var(--folder-c1))) 20%, transparent) !important;
 }
 
 /* Indicators and Icons: Down carets and navigation icons inherit font color */

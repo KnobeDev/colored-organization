@@ -59,6 +59,14 @@ body.text-contrast-default.theme-dark .nav-folder {
   border-radius: 4px;
 }
 
+/* Ensure inner text elements inherit the parent color instead of Obsidian defaults */
+.nav-folder > .nav-folder-title .nav-folder-title-content,
+.nav-folder > .nav-folder-title .tree-item-inner,
+.nav-folder > .nav-folder-children .nav-file-title .nav-file-title-content,
+.nav-folder > .nav-folder-children .nav-file-title .tree-item-inner {
+  color: inherit !important;
+}
+
 /* Indicators and Icons: Down carets and navigation icons inherit font color */
 .nav-folder > .nav-folder-title .nav-folder-collapse-indicator,
 .nav-folder > .nav-folder-title .collapse-icon,
@@ -72,6 +80,12 @@ body.text-contrast-default.theme-dark .nav-folder {
   color: inherit !important;
   stroke: currentColor !important;
   fill: currentColor;
+}
+
+/* Collapse/Guiding Line: Make the vertical lines match the text color */
+.nav-folder-children,
+.tree-item-children {
+  border-left: 1px solid var(--folder-text-color, var(--folder-color, var(--folder-c1))) !important;
 }
 
 /* Per-folder color cycle */

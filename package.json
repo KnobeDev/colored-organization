@@ -1,6 +1,6 @@
 {
   "name": "colored-organization",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Combines folder palette customization and hierarchical color cascades with text contrast correction, background opacity adjustment, and lock icons for KNOBE files.",
   "main": "main.js",
   "scripts": {

@@ -20,9 +20,26 @@ body.theme-dark {
   --folder-bg-mix: 8%; /* Default dark mix strength */
 }
 
+/* Global Text Contrast Class Triggers */
+body.text-contrast-match .nav-folder {
+  --folder-text-color: var(--folder-color);
+}
+body.text-contrast-high.theme-light .nav-folder {
+  --folder-text-color: #000000;
+}
+body.text-contrast-high.theme-dark .nav-folder {
+  --folder-text-color: #f5f5f5;
+}
+body.text-contrast-default.theme-light .nav-folder {
+  --folder-text-color: var(--text-normal);
+}
+body.text-contrast-default.theme-dark .nav-folder {
+  --folder-text-color: var(--text-normal);
+}
+
 /* Base file explorer folder layout */
 .nav-folder {
-  border-left: 3px solid var(--folder-color, var(--folder-c1));
+  border-left: 3px solid var(--folder-text-color, var(--folder-color, var(--folder-c1)));
   background-color: var(--folder-bg, color-mix(in srgb, var(--folder-color, var(--folder-c1)) var(--folder-bg-mix, 5%), var(--background-secondary))) !important;
   border-radius: 6px;
   margin: 6px 0 6px 8px;
@@ -32,14 +49,29 @@ body.theme-dark {
 
 /* Base title colors */
 .nav-folder > .nav-folder-title {
-  color: var(--folder-color, var(--folder-c1)) !important;
+  color: var(--folder-text-color, var(--folder-color, var(--folder-c1))) !important;
   font-weight: 600 !important;
   border-radius: 4px;
 }
 
 .nav-folder > .nav-folder-children .nav-file-title {
-  color: var(--folder-color, var(--folder-c1)) !important;
+  color: var(--folder-text-color, var(--folder-color, var(--folder-c1))) !important;
   border-radius: 4px;
+}
+
+/* Indicators and Icons: Down carets and navigation icons inherit font color */
+.nav-folder > .nav-folder-title .nav-folder-collapse-indicator,
+.nav-folder > .nav-folder-title .collapse-icon,
+.nav-folder > .nav-folder-title .tree-item-icon {
+  color: var(--folder-text-color, var(--folder-color, var(--folder-c1))) !important;
+}
+
+.nav-folder > .nav-folder-title .nav-folder-collapse-indicator svg,
+.nav-folder > .nav-folder-title .collapse-icon svg,
+.nav-folder > .nav-folder-title .tree-item-icon svg {
+  color: inherit !important;
+  stroke: currentColor !important;
+  fill: currentColor;
 }
 
 /* Per-folder color cycle */

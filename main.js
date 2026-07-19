@@ -77,6 +77,16 @@ function ensureContrast(hex, bgHex, target) {
   return rgbToHex(mixRgb(src, towards, hi));
 }
 
+function getHighContrastColor(folderColorHex, isDarkTheme, mixPercent) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(folderColorHex)) return isDarkTheme ? "#f5f5f5" : "#000000";
+  const folderRgb = hexToRgb(folderColorHex);
+  const bgRgb = hexToRgb(isDarkTheme ? DARK_BG : LIGHT_BG);
+  const mixedRgb = mixRgb(bgRgb, folderRgb, mixPercent / 100);
+  const lum = luminance(mixedRgb);
+  return lum > 0.5 ? "#000000" : "#f5f5f5";
+}
+
+// Helper to escape path for selector
 function cssEscapePath(p) {
   return p.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
@@ -276,13 +286,10 @@ class FolderStyleModal extends Modal {
       b.toggleClass("is-current", (this.cfg.pattern ?? "none") === key);
     }
     if (this.cfg.color) {
-      const lightC = ensureContrast(this.cfg.color, LIGHT_BG, AA);
-      const darkC = this.cfg.darkColor ?? ensureContrast(this.cfg.color, DARK_BG, AA);
-      this.previewEl.empty();
       const l = this.previewEl.createSpan({ cls: "folder-palette-chip", text: "day" });
-      l.style.cssText = `background:${LIGHT_BG};color:${lightC};`;
+      l.style.cssText = `background:${LIGHT_BG};color:${ensureContrast(this.cfg.color, LIGHT_BG, AA)};`;
       const d = this.previewEl.createSpan({ cls: "folder-palette-chip", text: "night" });
-      d.style.cssText = `background:${DARK_BG};color:${darkC};`;
+      d.style.cssText = `background:${DARK_BG};color:${this.cfg.darkColor ?? ensureContrast(this.cfg.color, DARK_BG, AA)};`;
     }
   }
 
@@ -304,10 +311,10 @@ class ColoredOrganizationSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Background mix / opacity strength")
-      .setDesc("Control the intensity of the colored background tint mixed into folders (0% to 50%). Default: 5% light, 8% dark.")
+      .setDesc("Control the intensity of the colored background tint mixed into folders (0% to 100%). Default: 5% light, 8% dark.")
       .addSlider((slider) =>
         slider
-          .setLimits(0, 50, 1)
+          .setLimits(0, 100, 1)
           .setValue(this.plugin.data.bgOpacity ?? 5)
           .setDynamicTooltip()
           .onChange(async (value) => {
@@ -416,6 +423,12 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
     });
 
     // Vault events for custom style persistence and Knobe file detection
+    this.registerEvent(
+      this.app.workspace.on("layout-change", () => {
+        this.decorateFileExplorer();
+      })
+    );
+
     this.registerEvent(
       this.app.vault.on("rename", (file, oldPath) => {
         let dirty = false;
@@ -543,6 +556,12 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
   applyCss() {
     const rules = [];
     
+    // Toggle active contrast mode class name on body
+    const modes = ["match", "high-contrast", "default"];
+    for (const m of modes) {
+      document.body.classList.toggle(`text-contrast-${m}`, this.data.textColorMode === m);
+    }
+
     // Global background mix/opacity overrides
     const opacity = this.data.bgOpacity ?? 5;
     rules.push(`body { --folder-bg-mix: ${opacity}% !important; }`);
@@ -551,40 +570,45 @@ module.exports = class ColoredOrganizationPlugin extends Plugin {
       if (!cfg || typeof cfg !== "object") continue;
       const sel = `.nav-folder:has(> .nav-folder-title[data-path="${cssEscapePath(p)}"])`;
       
-      if (cfg.color) {
-        const lightC = ensureContrast(cfg.color, LIGHT_BG, AA);
-        const darkC = cfg.darkColor ?? ensureContrast(cfg.color, DARK_BG, AA);
-        rules.push(`body.theme-light ${sel} { --folder-color: ${lightC} !important; }`);
-        rules.push(`body.theme-dark ${sel} { --folder-color: ${darkC} !important; }`);
+      let lightColor = cfg.color ? ensureContrast(cfg.color, LIGHT_BG, AA) : null;
+      let darkColor = cfg.color ? (cfg.darkColor ?? ensureContrast(cfg.color, DARK_BG, AA)) : null;
+
+      // Determine text color for light mode
+      let lightText = null;
+      if (cfg.textColor) {
+        lightText = ensureContrast(cfg.textColor, LIGHT_BG, AA);
+      } else if (this.data.textColorMode === "high-contrast") {
+        lightText = cfg.color ? getHighContrastColor(cfg.color, false, opacity) : "#000000";
+      } else if (this.data.textColorMode === "default") {
+        lightText = "var(--text-normal)";
+      } else if (lightColor) {
+        lightText = lightColor;
       }
 
-      // Font color styling logic
+      // Determine text color for dark mode
+      let darkText = null;
       if (cfg.textColor) {
-        // Folder style overrides text color explicitly
-        rules.push(`body.theme-light ${sel} > .nav-folder-title { color: ${ensureContrast(cfg.textColor, LIGHT_BG, AA)} !important; }`);
-        rules.push(`body.theme-dark ${sel} > .nav-folder-title { color: ${ensureContrast(cfg.textColor, DARK_BG, AA)} !important; }`);
+        darkText = cfg.textColorDark ?? ensureContrast(cfg.textColor, DARK_BG, AA);
       } else if (this.data.textColorMode === "high-contrast") {
-        // High contrast mode: force clear black/white text
-        rules.push(`body.theme-light ${sel} > .nav-folder-title { color: #1b1b1b !important; }`);
-        rules.push(`body.theme-light ${sel} > .nav-folder-children .nav-file-title { color: #2c261f !important; }`);
-        rules.push(`body.theme-dark ${sel} > .nav-folder-title { color: #ffffff !important; }`);
-        rules.push(`body.theme-dark ${sel} > .nav-folder-children .nav-file-title { color: #e6e3dc !important; }`);
+        darkText = cfg.color ? getHighContrastColor(cfg.color, true, opacity) : "#f5f5f5";
       } else if (this.data.textColorMode === "default") {
-        // Let Obsidian default text colors apply
-        rules.push(`body.theme-light ${sel} > .nav-folder-title { color: var(--text-normal) !important; }`);
-        rules.push(`body.theme-light ${sel} > .nav-folder-children .nav-file-title { color: var(--text-muted) !important; }`);
-        rules.push(`body.theme-dark ${sel} > .nav-folder-title { color: var(--text-normal) !important; }`);
-        rules.push(`body.theme-dark ${sel} > .nav-folder-children .nav-file-title { color: var(--text-muted) !important; }`);
-      } else {
-        // Default (match folder color with contrast safety)
-        if (cfg.color) {
-          const lightText = ensureContrast(cfg.color, LIGHT_BG, AA);
-          const darkText = cfg.darkColor ?? ensureContrast(cfg.color, DARK_BG, AA);
-          rules.push(`body.theme-light ${sel} > .nav-folder-title { color: ${lightText} !important; }`);
-          rules.push(`body.theme-dark ${sel} > .nav-folder-title { color: ${darkText} !important; }`);
-          rules.push(`body.theme-light ${sel} > .nav-folder-children .nav-file-title { color: ${lightText} !important; }`);
-          rules.push(`body.theme-dark ${sel} > .nav-folder-children .nav-file-title { color: ${darkText} !important; }`);
-        }
+        darkText = "var(--text-normal)";
+      } else if (darkColor) {
+        darkText = darkColor;
+      }
+
+      if (lightColor) {
+        rules.push(`body.theme-light ${sel} { --folder-color: ${lightColor} !important; }`);
+      }
+      if (darkColor) {
+        rules.push(`body.theme-dark ${sel} { --folder-color: ${darkColor} !important; }`);
+      }
+
+      if (lightText) {
+        rules.push(`body.theme-light ${sel} { --folder-text-color: ${lightText} !important; }`);
+      }
+      if (darkText) {
+        rules.push(`body.theme-dark ${sel} { --folder-text-color: ${darkText} !important; }`);
       }
 
       if (cfg.pattern && PATTERNS[cfg.pattern]) {
